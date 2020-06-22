@@ -12,6 +12,12 @@ class UpSampleBlock(tf.keras.layers.Layer):
                                       kernel_initializer=self.initializer,
                                       use_bias=False
                                       )
+        self.batch_norm = tf.keras.layers.BatchNormalization()
         self.dropout = tf.keras.layers.Dropout(0.5)
         self.relu = tf.nn.relu
+
+    def call(self, inputs):
+        x = self.conv_transpose(inputs)
+        x = self.batch_norm(x)
+        return self.relu(x)
 
