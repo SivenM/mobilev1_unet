@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+from tensorflow.keras.applications import MobileNet
 
 class UpSampleBlock(tf.keras.layers.Layer):
     """Conv2DTranspose => Batchnorm => Dropout => Relu"""
@@ -17,9 +17,9 @@ class UpSampleBlock(tf.keras.layers.Layer):
         self.dropout = tf.keras.layers.Dropout(0.5)
         self.relu = tf.nn.relu
 
-    def call(self, inputs):
+    def call(self, inputs, training=False):
         x = self.conv_transpose(inputs)
-        x = self.batch_norm(x)
+        x = self.batch_norm(x, training=training)
         if self.apply_dropout:
             x = self.dropout(x)
         return self.relu(x)
@@ -41,3 +41,21 @@ class OutBlock(tf.keras.layers.Layer):
     def call(self, inputs):
         x = self.conv_transpose(inputs)
         return self.conv2D(x)
+
+
+def get_encoder(input_shape=[224, 224, 3]):
+    mn = MobileNet(weights='imagenet',
+                   include_top=False,
+                   input_shape=input_shape)
+    mn.trainable = False
+    layer_names = [
+        'conv_pw_1_relu',
+        'conv_pw_3_relu',
+        'conv_pw_5_relu',
+        'conv_pw_11_relu',
+        'conv_pw_13_relu',
+    ]
+    layers = [mn.get_layer(name).output for name in layer_names]
+    down_stack = tf.keras.Model(inputs=mn.input, outputs=layers)
+    down_stack.trainable = False
+    return down_stack
