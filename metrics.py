@@ -1,6 +1,4 @@
-import tensorflow as tf
 from tensorflow.keras import backend as K
-import numpy as np
 
 
 # Metrics

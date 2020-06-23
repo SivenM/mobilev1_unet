@@ -53,7 +53,7 @@ def mobile_unet(input_shape=(224, 224, 3)):
         UpSampleBlock(128, 3),  # (bs, 64, 64, 256)
         UpSampleBlock(64, 3),  # (bs, 128, 128, 128)
     ]
-    inputs = tf.keras.layers.Input(shape=[224, 224, 3])
+    inputs = tf.keras.layers.Input(shape=input_shape)
     x = inputs
 
     # Downsampling through the model
