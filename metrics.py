@@ -10,8 +10,8 @@ def dice_coef(y_true, y_pred, smooth=1):
 
 
 def iou(y_true, y_pred, smooth=1):
-    intersection = K.sum(K.abs(y_true * y_pred), axis=-1)
-    union = K.sum(y_true, -1) + K.sum(y_pred, -1) - intersection
+    intersection = K.sum(K.abs(y_true[:,:,:,1] * y_pred[:,:,:,1]), axis=-1)
+    union = K.sum(y_true[:,:,:,1], -1) + K.sum(y_pred[:,:,:,1], -1) - intersection
     result = (intersection + smooth) / (union + smooth)
     return result
 

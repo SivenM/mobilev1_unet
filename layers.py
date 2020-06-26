@@ -3,9 +3,10 @@ from tensorflow.keras.applications import MobileNet
 
 class UpSampleBlock(tf.keras.layers.Layer):
     """Conv2DTranspose => Batchnorm => Dropout => Relu"""
-    def __init__(self, filters, size, apply_dropout=False):
+    def __init__(self, filters, size, apply_dropout=False, deeper=False):
         super(UpSampleBlock, self).__init__()
         self.apply_dropout = apply_dropout
+        self.deeper = deeper
         self.initializer = tf.random_normal_initializer(0., 0.02)
         self.conv_transpose = tf.keras.layers.Conv2DTranspose(
                                       filters, size, strides=2,
@@ -13,6 +14,12 @@ class UpSampleBlock(tf.keras.layers.Layer):
                                       kernel_initializer=self.initializer,
                                       use_bias=False
                                       )
+        self.conv = tf.keras.layers.Conv2D(
+                                    filters,
+                                    size,
+                                    activation = 'relu',
+                                    padding = 'same',
+                                    kernel_initializer = 'he_normal')
         self.batch_norm = tf.keras.layers.BatchNormalization()
         self.dropout = tf.keras.layers.Dropout(0.5)
         self.relu = tf.nn.relu
@@ -22,7 +29,11 @@ class UpSampleBlock(tf.keras.layers.Layer):
         x = self.batch_norm(x, training=training)
         if self.apply_dropout:
             x = self.dropout(x)
-        return self.relu(x)
+        x = self.relu(x)
+        if self.deeper:
+            x = self.conv(x)
+            x = self.conv(x)
+        return x
 
 
 class OutBlock(tf.keras.layers.Layer):

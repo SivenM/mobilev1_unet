@@ -44,19 +44,24 @@ def OHE(mask):
     return gt
 
 
-def visualise(img, mask, predicted=None):
-    plt.imshow(img);
-    plt.title("Image")
-    plt.axis('off')
+def visualise(img, gt, predicted=0):
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1, 3, 1)
+    ax2 = fig.add_subplot(1, 3, 2)
+    ax1.imshow(img)
+    ax1.axis('off')
+    ax2.imshow(gt, cmap='gray')
+    ax2.axis('off')
+    if predicted != 0:
+        ax3 = fig.add_subplot(1, 3, 3)
+        ax3.imshow(predicted)
+        ax3.axis('off')
     plt.show()
-    plt.imshow(mask);
-    plt.title("Ground true")
-    plt.axis('off')
-    plt.show()
-    plt.imshow(predicted)
-    plt.title("Predicted Mask")
-    plt.axis('off')
-    plt.show()
+
+
+def get_img(img_path):
+    img = image.load_img(img_path, target_size=(224, 224))
+    return img
 
 
 def get_img_mask(img_path, msk_path):
@@ -71,10 +76,10 @@ def preproc_to_model(img, msk):
     img_tensor = np.expand_dims(img_tensor, axis=0)
 
     msk_tensor = image.img_to_array(msk)
-    msk_tensor = tf.image.rgb_to_grayscale(img_tensor)
+    msk_tensor = tf.image.rgb_to_grayscale(msk_tensor)
     msk_tensor /= 255.
-    # msk_tensor = np.expand_dims(msk_tensor, axis=0)
-
+    msk_tensor = OHE(msk_tensor)
+    msk_tensor = np.expand_dims(msk_tensor, axis=0)
     return img_tensor, msk_tensor
 
 

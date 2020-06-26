@@ -45,27 +45,27 @@ class MobileUnet(tf.keras.Model):
         return self.output_layer(x)
 
 
-def mobile_unet(input_shape=(224, 224, 3)):
+def mobile_unet(input_shape=(224, 224, 3), deeper=False):
     encoder = get_encoder(input_shape)
     up_stack = [
-        UpSampleBlock(512, 3),  # (bs, 16, 16, 1024)
-        UpSampleBlock(256, 3),  # (bs, 32, 32, 512)
-        UpSampleBlock(128, 3),  # (bs, 64, 64, 256)
-        UpSampleBlock(64, 3),  # (bs, 128, 128, 128)
+        UpSampleBlock(512, 3, deeper=deeper),  # (bs, 16, 16, 1024)
+        UpSampleBlock(256, 3, deeper=deeper),  # (bs, 32, 32, 512)
+        UpSampleBlock(128, 3, deeper=deeper),  # (bs, 64, 64, 256)
+        UpSampleBlock(64, 3, deeper=deeper),  # (bs, 128, 128, 128)
     ]
     inputs = tf.keras.layers.Input(shape=input_shape)
+    # Вход
     x = inputs
-
-    # Downsampling through the model
+    # Энкодер
     skips = encoder(x)
     x = skips[-1]
     skips = reversed(skips[:-1])
-
-    # Upsampling and establishing the skip connections
+    # Дкодер и конкатенация фичемапов
     for up, skip in zip(up_stack, skips):
         x = up(x)
         concat = tf.keras.layers.Concatenate()
         x = concat([x, skip])
+    # Выходной блок
     x = OutBlock(32, 3)(x)
     model = tf.keras.Model(inputs=inputs, outputs=x)
     return model
