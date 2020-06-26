@@ -50,12 +50,15 @@ def visualise(img, gt, predicted=0):
     ax2 = fig.add_subplot(1, 3, 2)
     ax1.imshow(img)
     ax1.axis('off')
+    ax1.set(title='Input image')
     ax2.imshow(gt, cmap='gray')
     ax2.axis('off')
+    ax2.set(title='Ground true')
     if predicted != 0:
         ax3 = fig.add_subplot(1, 3, 3)
         ax3.imshow(predicted)
         ax3.axis('off')
+        ax3.set(title='Predict')
     plt.show()
 
 
@@ -109,5 +112,5 @@ def predict_and_evaluate(img_path, msk_path, model):
     dice_test = metrics.dice_coef(msk_tensor, msk_tensor)
     print("Метрика для ground true: {}".format(dice_test))
     msk_predicted = create_mask(result)
-    msk_predicted = predToGrayImage(result[0])
+    msk_predicted = predToGrayImage(msk_predicted)
     visualise(img, msk_true, msk_predicted)
