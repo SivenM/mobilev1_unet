@@ -45,13 +45,13 @@ class MobileUnet(tf.keras.Model):
         return self.output_layer(x)
 
 
-def mobile_unet(input_shape=(224, 224, 3), deeper=False):
+def mobile_unet(input_shape=(224, 224, 3), deeper=False, separable=False):
     encoder = get_encoder(input_shape)
     up_stack = [
-        UpSampleBlock(512, 3, deeper=deeper),  # (bs, 16, 16, 1024)
-        UpSampleBlock(256, 3, deeper=deeper),  # (bs, 32, 32, 512)
-        UpSampleBlock(128, 3, deeper=deeper),  # (bs, 64, 64, 256)
-        UpSampleBlock(64, 3, deeper=deeper),  # (bs, 128, 128, 128)
+        UpSampleBlock(512, 3, deeper=deeper, separable=separable),  # (bs, 16, 16, 1024)
+        UpSampleBlock(256, 3, deeper=deeper, separable=separable),  # (bs, 32, 32, 512)
+        UpSampleBlock(128, 3, deeper=deeper, separable=separable),  # (bs, 64, 64, 256)
+        UpSampleBlock(64, 3, deeper=deeper, separable=separable),  # (bs, 128, 128, 128)
     ]
     inputs = tf.keras.layers.Input(shape=input_shape)
     # Вход

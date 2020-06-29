@@ -1,10 +1,12 @@
 import tensorflow as tf
 from tensorflow.keras.applications import MobileNet
 
+
 class UpSampleBlock(tf.keras.layers.Layer):
     """Conv2DTranspose => Batchnorm => Dropout => Relu"""
-    def __init__(self, filters, size, apply_dropout=False, deeper=False):
+    def __init__(self, filters, size, apply_dropout=False, deeper=False, separable=False):
         super(UpSampleBlock, self).__init__()
+        self.separable = separable
         self.apply_dropout = apply_dropout
         self.deeper = deeper
         self.initializer = tf.random_normal_initializer(0., 0.02)
@@ -17,9 +19,14 @@ class UpSampleBlock(tf.keras.layers.Layer):
         self.conv = tf.keras.layers.Conv2D(
                                     filters,
                                     size,
-                                    activation = 'relu',
-                                    padding = 'same',
+                                    activation='relu',
+                                    padding='same',
                                     kernel_initializer = 'he_normal')
+        self.sep_conv = tf.keras.layers.SeparableConv2D(
+                                    filters,
+                                    size,
+                                    activation='relu',
+                                    padding='same',)
         self.batch_norm = tf.keras.layers.BatchNormalization()
         self.dropout = tf.keras.layers.Dropout(0.5)
         self.relu = tf.nn.relu
@@ -31,15 +38,21 @@ class UpSampleBlock(tf.keras.layers.Layer):
             x = self.dropout(x)
         x = self.relu(x)
         if self.deeper:
-            x = self.conv(x)
-            x = self.conv(x)
+            if self.separable:
+                x = self.sep_conv(x)
+                x = self.sep_conv(x)
+                x = self.sep_conv(x)
+            else:
+                x = self.conv(x)
+                x = self.conv(x)
         return x
 
 
 class OutBlock(tf.keras.layers.Layer):
     """Conv2DTranspose => Conv2D => softmax"""
-    def __init__(self, filters, size, num_classes=2):
+    def __init__(self, filters, size, num_classes=2, separable=False):
         super(OutBlock, self).__init__()
+        self.separable = separable
         self.initializer = tf.random_normal_initializer(0., 0.02)
         self.conv_transpose = tf.keras.layers.Conv2DTranspose(
                                       filters, size, strides=2,
@@ -47,10 +60,18 @@ class OutBlock(tf.keras.layers.Layer):
                                       kernel_initializer=self.initializer,
                                       use_bias=False
                                       )
+        self.sep_conv = tf.keras.layers.SeparableConv2D(
+                                      filters,
+                                      size,
+                                      activation='relu',
+                                      padding='same',)
         self.conv2D = tf.keras.layers.Conv2D(num_classes, 1, activation='softmax')
 
     def call(self, inputs):
         x = self.conv_transpose(inputs)
+        if self.separable:
+            x = self.sep_conv(x)
+            x = self.sep_conv(x)
         return self.conv2D(x)
 
 
