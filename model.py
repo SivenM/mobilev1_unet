@@ -66,6 +66,6 @@ def mobile_unet(input_shape=(224, 224, 3), deeper=False, separable=False):
         concat = tf.keras.layers.Concatenate()
         x = concat([x, skip])
     # Выходной блок
-    x = OutBlock(32, 3)(x)
+    x = OutBlock(32, 3, separable=separable)(x)
     model = tf.keras.Model(inputs=inputs, outputs=x)
     return model
