@@ -1,9 +1,10 @@
 import tensorflow as tf
-from tensorflow.keras.applications import MobileNet
+from tensorflow.keras.applications import MobileNet, ResNet50
 
 
 class UpSampleBlock(tf.keras.layers.Layer):
     """Conv2DTranspose => Batchnorm => Dropout => Relu"""
+
     def __init__(self, filters, size, apply_dropout=False, deeper=False, separable=False):
         super(UpSampleBlock, self).__init__()
         self.separable = separable
@@ -11,22 +12,22 @@ class UpSampleBlock(tf.keras.layers.Layer):
         self.deeper = deeper
         self.initializer = tf.random_normal_initializer(0., 0.02)
         self.conv_transpose = tf.keras.layers.Conv2DTranspose(
-                                      filters, size, strides=2,
-                                      padding='same',
-                                      kernel_initializer=self.initializer,
-                                      use_bias=False
-                                      )
+            filters, size, strides=2,
+            padding='same',
+            kernel_initializer=self.initializer,
+            use_bias=False
+        )
         self.conv = tf.keras.layers.Conv2D(
-                                    filters,
-                                    size,
-                                    activation='relu',
-                                    padding='same',
-                                    kernel_initializer = 'he_normal')
+            filters,
+            size,
+            activation='relu',
+            padding='same',
+            kernel_initializer='he_normal')
         self.sep_conv = tf.keras.layers.SeparableConv2D(
-                                    filters,
-                                    size,
-                                    activation='relu',
-                                    padding='same',)
+            filters,
+            size,
+            activation='relu',
+            padding='same', )
         self.batch_norm = tf.keras.layers.BatchNormalization()
         self.dropout = tf.keras.layers.Dropout(0.5)
         self.relu = tf.nn.relu
@@ -50,21 +51,22 @@ class UpSampleBlock(tf.keras.layers.Layer):
 
 class OutBlock(tf.keras.layers.Layer):
     """Conv2DTranspose => Conv2D => softmax"""
+
     def __init__(self, filters, size, num_classes=2, separable=False):
         super(OutBlock, self).__init__()
         self.separable = separable
         self.initializer = tf.random_normal_initializer(0., 0.02)
         self.conv_transpose = tf.keras.layers.Conv2DTranspose(
-                                      filters, size, strides=2,
-                                      padding='same',
-                                      kernel_initializer=self.initializer,
-                                      use_bias=False
-                                      )
+            filters, size, strides=2,
+            padding='same',
+            kernel_initializer=self.initializer,
+            use_bias=False
+        )
         self.sep_conv = tf.keras.layers.SeparableConv2D(
-                                      filters,
-                                      size,
-                                      activation='relu',
-                                      padding='same',)
+            filters,
+            size,
+            activation='relu',
+            padding='same', )
         self.conv2D = tf.keras.layers.Conv2D(num_classes, 1, activation='softmax')
 
     def call(self, inputs):
@@ -75,7 +77,7 @@ class OutBlock(tf.keras.layers.Layer):
         return self.conv2D(x)
 
 
-def get_encoder(input_shape=[224, 224, 3]):
+def mobilenet_encoder(input_shape=[224, 224, 3]):
     mn = MobileNet(weights='imagenet',
                    include_top=False,
                    input_shape=input_shape)
@@ -89,5 +91,23 @@ def get_encoder(input_shape=[224, 224, 3]):
     ]
     layers = [mn.get_layer(name).output for name in layer_names]
     down_stack = tf.keras.Model(inputs=mn.input, outputs=layers)
+    down_stack.trainable = False
+    return down_stack
+
+
+def resnet50_encoder(input_shape=[224, 224, 3]):
+    resnet50 = ResNet50(weights='imagenet',
+                        include_top=False,
+                        input_shape=(224, 224, 3))
+
+    layers_names = [
+        'conv1_relu',
+        'conv2_block3_out',
+        'conv3_block4_out',
+        'conv4_block6_out',
+        'conv5_block3_out'
+    ]
+    layers = [resnet50.get_layer(name).output for name in layers_names]
+    down_stack = tf.keras.Model(inputs=resnet50.input, outputs=layers)
     down_stack.trainable = False
     return down_stack

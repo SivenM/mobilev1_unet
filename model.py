@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.applications import MobileNet
-from layers import UpSampleBlock, OutBlock, get_encoder
+from layers import UpSampleBlock, OutBlock, mobilenet_encoder, resnet50_encoder
 
 
 class MobileUnet(tf.keras.Model):
@@ -45,8 +45,12 @@ class MobileUnet(tf.keras.Model):
         return self.output_layer(x)
 
 
-def mobile_unet(input_shape=(224, 224, 3), deeper=False, separable=False):
-    encoder = get_encoder(input_shape)
+def mobile_unet(input_shape=(224, 224, 3), resnet=False, deeper=False, separable=False):
+    if resnet:
+        encoder = resnet50_encoder(input_shape)
+    else:
+        encoder = mobilenet_encoder(input_shape)
+
     up_stack = [
         UpSampleBlock(512, 3, deeper=deeper, separable=separable),  # (bs, 16, 16, 1024)
         UpSampleBlock(256, 3, deeper=deeper, separable=separable),  # (bs, 32, 32, 512)
